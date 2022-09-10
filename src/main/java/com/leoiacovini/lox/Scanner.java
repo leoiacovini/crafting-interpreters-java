@@ -155,8 +155,8 @@ public class Scanner {
 
             case '!' -> newToken(tracker, tracker.match('=') ? TokenType.BANG_EQUAL : TokenType.BANG);
             case '=' -> newToken(tracker, tracker.match('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL);
-            case '<' -> newToken(tracker, tracker.match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER);
-            case '>' -> newToken(tracker, tracker.match('=') ? TokenType.LESS_EQUAL : TokenType.LESS);
+            case '<' -> newToken(tracker, tracker.match('=') ? TokenType.LESS_EQUAL : TokenType.LESS);
+            case '>' -> newToken(tracker, tracker.match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER);
 
             case '/' -> {
                 if (tracker.match('/')) {

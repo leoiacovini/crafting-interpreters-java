@@ -3,6 +3,7 @@ package com.leoiacovini.lox;
 public class Reporter {
 
     static boolean hadError = false;
+    static boolean hadRuntimeError = false;
 
     static void report(int line, String where, String message) {
         System.err.println(
@@ -21,5 +22,10 @@ public class Reporter {
         } else {
             report(token.getLine(), " at '" + token.getLexeme() + "'", message);
         }
+    }
+
+    public static void runtimeError(Interpreter.RuntimeError error) {
+        System.err.println(error.getMessage() + "\n[line " + error.getToken().getLine() + "]");
+        hadRuntimeError = true;
     }
 }

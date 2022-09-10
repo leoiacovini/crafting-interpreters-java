@@ -58,7 +58,7 @@ public class Parser {
     }
 
     private ParseError error(Token token, String message) {
-        Reporter.error(token.getLine(), message);
+        Reporter.error(token, message);
         return new ParseError();
     }
 

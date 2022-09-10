@@ -9,13 +9,14 @@ import java.nio.file.Paths;
 
 public class Main {
 
+    private static final Interpreter interpreter = new Interpreter();
+
     private static void run(String sourceCode) {
         final var scanner = new Scanner(sourceCode);
-        final var tokens = scanner.scanTokens();
-        final var parser = new Parser(tokens);
+        final var parser = new Parser(scanner.scanTokens());
         final var expr = parser.parse();
         if (Reporter.hadError || expr.isEmpty()) return;
-        System.out.println(new AstPrinter().print(expr.get()));
+        interpreter.interpret(expr.get());
     }
 
     private static void runPrompt() throws IOException {
@@ -36,6 +37,8 @@ public class Main {
         run(sourceStr);
         if (Reporter.hadError) {
             System.exit(65);
+        } else if (Reporter.hadRuntimeError) {
+            System.exit(70);
         }
     }
 
