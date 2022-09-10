@@ -1,13 +1,13 @@
-package com.leoiacovini;
+package com.leoiacovini.lox;
 
 public class Token {
 
     public enum TokenType {
-        // Single char tokens
+        // Single char Tokens
         LEFT_PARENS, RIGHT_PARENS, LEFT_BRACE, RIGHT_BRACE, COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR,
 
-        // one or two char tokens
-        BANG, BANG_EQUAL, EQUAL, EQUAL_EQUAL, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL,
+        // One or two char Tokens
+        BANG, BANG_EQUAL, EQUAL, EQUAL_EQUAL, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL, COLON, QUESTION,
 
         // Literals
         IDENTIFIER, STRING, NUMBER,

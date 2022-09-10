@@ -1,11 +1,11 @@
-package com.leoiacovini;
+package com.leoiacovini.lox;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.leoiacovini.Token.TokenType;
+import com.leoiacovini.lox.Token.TokenType;
 
 public class Scanner {
 
@@ -99,7 +99,7 @@ public class Scanner {
             stringBuilder.append(c);
         }
         if (tracker.isAtEnd()) {
-            Main.error(tracker.line, "Unterminated string.");
+            Reporter.error(tracker.line, "Unterminated string.");
             return null;
         }
         tracker.advance();
@@ -150,6 +150,8 @@ public class Scanner {
             case '+' -> newToken(tracker, TokenType.PLUS);
             case ';' -> newToken(tracker, TokenType.SEMICOLON);
             case '*' -> newToken(tracker, TokenType.STAR);
+            case '?' -> newToken(tracker, TokenType.QUESTION);
+            case ':' -> newToken(tracker, TokenType.COLON);
 
             case '!' -> newToken(tracker, tracker.match('=') ? TokenType.BANG_EQUAL : TokenType.BANG);
             case '=' -> newToken(tracker, tracker.match('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL);
@@ -184,7 +186,7 @@ public class Scanner {
                 } else if (Character.isAlphabetic(c) || c == '_') {
                     yield identifier(tracker);
                 } else {
-                    Main.error(tracker.line, "Unexpected character '" + c + "'");
+                    Reporter.error(tracker.line, "Unexpected character '" + c + "'");
                     yield null;
                 }
             }

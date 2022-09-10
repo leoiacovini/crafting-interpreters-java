@@ -1,5 +1,6 @@
-package com.leoiacovini;
+package com.leoiacovini.lox;
 
+import com.leoiacovini.lox.Scanner;
 import org.junit.jupiter.api.Test;
 
 public class ScannerTests {

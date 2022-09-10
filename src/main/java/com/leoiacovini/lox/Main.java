@@ -1,4 +1,4 @@
-package com.leoiacovini;
+package com.leoiacovini.lox;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,25 +9,13 @@ import java.nio.file.Paths;
 
 public class Main {
 
-    static private boolean hadError = false;
-
-    static void report(int line, String where, String message) {
-        System.err.println(
-                "[line " + line + "] " + "Error " + where + ": " + message
-        );
-    }
-
-    static void error(int line, String message) {
-        report(line, "", message);
-        hadError = true;
-    }
-
     private static void run(String sourceCode) {
         final var scanner = new Scanner(sourceCode);
         final var tokens = scanner.scanTokens();
-        for (final var token : tokens) {
-            System.out.println(token);
-        }
+        final var parser = new Parser(tokens);
+        final var expr = parser.parse();
+        if (Reporter.hadError || expr.isEmpty()) return;
+        System.out.println(new AstPrinter().print(expr.get()));
     }
 
     private static void runPrompt() throws IOException {
@@ -38,7 +26,7 @@ public class Main {
             final var line = reader.readLine();
             if (line == null) break;
             run(line);
-            hadError = false;
+            Reporter.hadError = false;
         }
     }
 
@@ -46,7 +34,7 @@ public class Main {
         final var bytes = Files.readAllBytes(Paths.get(filePath));
         final var sourceStr = new String(bytes, StandardCharsets.UTF_8);
         run(sourceStr);
-        if (hadError) {
+        if (Reporter.hadError) {
             System.exit(65);
         }
     }
