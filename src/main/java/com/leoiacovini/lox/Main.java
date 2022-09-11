@@ -14,9 +14,9 @@ public class Main {
     private static void run(String sourceCode) {
         final var scanner = new Scanner(sourceCode);
         final var parser = new Parser(scanner.scanTokens());
-        final var expr = parser.parse();
-        if (Reporter.hadError || expr.isEmpty()) return;
-        interpreter.interpret(expr);
+        final var statements = parser.parse();
+        if (Reporter.hadError || statements.isEmpty()) return;
+        interpreter.interpret(statements);
     }
 
     private static void runPrompt() throws IOException {

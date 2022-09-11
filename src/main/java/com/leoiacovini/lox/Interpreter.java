@@ -4,7 +4,15 @@ import java.util.List;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
-    final private Environment environment = new Environment();
+    final private Environment environment;
+
+    Interpreter(Environment environment) {
+        this.environment = environment;
+    }
+
+    Interpreter() {
+        this(new Environment());
+    }
 
     static class RuntimeError extends RuntimeException {
 
@@ -24,30 +32,49 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public void interpret(List<Stmt> statements) {
         try {
             for (final var stmt : statements) {
-                execute(stmt);
+                executeStmt(stmt);
             }
         } catch (RuntimeError error) {
             Reporter.runtimeError(error);
         }
     }
 
-    private void execute(Stmt stmt) {
+    private void executeStmt(Stmt stmt) {
         stmt.accept(this);
     }
 
-    private Object evaluate(Expr expr) {
+    private Object evaluateExpr(Expr expr) {
         return expr.accept(this);
     }
 
     @Override
+    public Void visitBlockStmt(Stmt.Block stmt) {
+        final var innerEnv = new Environment(this.environment);
+        final var innerInterpreter = new Interpreter(innerEnv);
+        innerInterpreter.interpret(stmt.statements);
+        return null;
+    }
+
+    @Override
     public Void visitExpressionStmt(Stmt.Expression stmt) {
-        evaluate(stmt.expression);
+        evaluateExpr(stmt.expression);
+        return null;
+    }
+
+    @Override
+    public Void visitIfStmt(Stmt.If stmt) {
+        final var conditionResult = evaluateExpr(stmt.condition);
+        if (isTruthy(conditionResult)) {
+            executeStmt(stmt.thenBranch);
+        } else if(stmt.elseBranch != null) {
+            executeStmt(stmt.elseBranch);
+        }
         return null;
     }
 
     @Override
     public Void visitPrintStmt(Stmt.Print stmt) {
-        final var evaluatedExpr = evaluate(stmt.expression);
+        final var evaluatedExpr = evaluateExpr(stmt.expression);
         System.out.println(stringify(evaluatedExpr));
         return null;
     }
@@ -55,7 +82,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Void visitVarStmt(Stmt.Var stmt) {
         if (stmt.initializer != null) {
-            final var initialValue = evaluate(stmt.initializer);
+            final var initialValue = evaluateExpr(stmt.initializer);
             environment.define(stmt.name.getLexeme(), initialValue);
         } else {
             environment.define(stmt.name.getLexeme(), null);
@@ -65,15 +92,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitAssignExpr(Expr.Assign expr) {
-        final var value = evaluate(expr.value);
+        final var value = evaluateExpr(expr.value);
         environment.assign(expr.name, value);
         return value;
     }
 
     @Override
     public Object visitBinaryExpr(Expr.Binary expr) {
-        final var left = evaluate(expr.left);
-        final var right = evaluate(expr.right);
+        final var left = evaluateExpr(expr.left);
+        final var right = evaluateExpr(expr.right);
         return switch (expr.operator.getType()) {
             case PLUS -> {
                 if (left instanceof Double && right instanceof Double) {
@@ -121,7 +148,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitGroupingExpr(Expr.Grouping expr) {
-        return evaluate(expr.expression);
+        return evaluateExpr(expr.expression);
     }
 
     @Override
@@ -131,7 +158,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitUnaryExpr(Expr.Unary expr) {
-        final var evaluated = evaluate(expr.right);
+        final var evaluated = evaluateExpr(expr.right);
         return switch (expr.operator.getType()) {
             case MINUS -> {
                 checkNumberOperands(expr.operator, evaluated);
@@ -144,11 +171,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitTernaryExpr(Expr.Ternary expr) {
-        final var evaluatedCondition = evaluate(expr.condition);
+        final var evaluatedCondition = evaluateExpr(expr.condition);
         if (isTruthy(evaluatedCondition)) {
-            return evaluate(expr.left);
+            return evaluateExpr(expr.left);
         } else {
-            return evaluate(expr.right);
+            return evaluateExpr(expr.right);
         }
     }
 

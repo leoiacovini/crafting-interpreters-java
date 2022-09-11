@@ -83,10 +83,36 @@ public class Parser {
         }
     }
 
+    private Stmt.Block block() {
+        final var stmtList = new ArrayList<Stmt>();
+        while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
+            stmtList.add(declaration());
+        }
+        consume(TokenType.RIGHT_BRACE, "Expected '}' after block.");
+        return new Stmt.Block(stmtList);
+    }
+
+    private Stmt.If ifBlock() {
+        consume(TokenType.LEFT_PARENS, "Expected '(' after if statement");
+        final var conditionExpr = expression();
+        consume(TokenType.RIGHT_PARENS, "Expected ')' after expression.");
+        final var trueStatement = statement();
+        if (match(TokenType.ELSE)) {
+            final var falseStatement = statement();
+            return new Stmt.If(conditionExpr, trueStatement, falseStatement);
+        } else {
+            return new Stmt.If(conditionExpr, trueStatement, null);
+        }
+    }
+
     private Stmt declaration() {
         if (match(TokenType.VAR)) {
             return varDeclaration();
-        } else {
+        } else if (match(TokenType.LEFT_BRACE)) {
+            return block();
+        } else if (match(TokenType.IF)) {
+            return ifBlock();
+        }else {
             return statement();
         }
     }
@@ -152,6 +178,22 @@ public class Parser {
             error(equals, "Invalid assignment target.");
         }
         return expr;
+    }
+
+    private Expr orExpr() {
+        if (match(TokenType.OR)) {
+
+        } else {
+            return equality();
+        }
+    }
+
+    private Expr andExpr() {
+        if (match(TokenType.AND)) {
+
+        } else {
+            return equality();
+        }
     }
 
     private Expr equalityRight(Expr left) {

@@ -1,9 +1,6 @@
-print "Hello World";
-print 10 * 20;
-var a = 10 * 20;
-var b = 5 * 3;
-print "Sum Result:";
-print a + b;
-a = "hello";
-print "After Re assign";
+var a = 1;
+{
+  var a = a + 2;
+  print a;
+}
 print a;
