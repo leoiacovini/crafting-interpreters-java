@@ -2,7 +2,6 @@ package com.leoiacovini.lox;
 
 import java.util.List;
 
-
 abstract class Stmt {
     interface Visitor<R> {
         R visitBlockStmt(Block stmt);
@@ -12,6 +11,8 @@ abstract class Stmt {
         R visitIfStmt(If stmt);
 
         R visitPrintStmt(Print stmt);
+
+        R visitWhileStmt(While stmt);
 
         R visitVarStmt(Var stmt);
     }
@@ -70,6 +71,21 @@ abstract class Stmt {
         }
 
         final Expr expression;
+    }
+
+    static class While extends Stmt {
+        While(Expr condition, Stmt body) {
+            this.condition = condition;
+            this.body = body;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitWhileStmt(this);
+        }
+
+        final Expr condition;
+        final Stmt body;
     }
 
     static class Var extends Stmt {

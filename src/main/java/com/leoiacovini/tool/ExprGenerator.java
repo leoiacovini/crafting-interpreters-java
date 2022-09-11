@@ -59,7 +59,6 @@ public class ExprGenerator {
         writer.println();
         writer.println("import java.util.List;");
         writer.println();
-        writer.println();
         writer.println("abstract class " + baseName + " {");
 
         defineVisitor(writer, baseName, types);
@@ -92,6 +91,7 @@ public class ExprGenerator {
                 "Expression: Expr expression",
                 "If: Expr condition, Stmt thenBranch, Stmt elseBranch",
                 "Print: Expr expression",
+                "While: Expr condition, Stmt body",
                 "Var: Token name, Expr initializer"
         ));
 

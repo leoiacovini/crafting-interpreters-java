@@ -51,4 +51,9 @@ public class AstPrinter implements Expr.Visitor<String> {
     public String visitVariableExpr(Expr.Variable expr) {
         return expr.name.getLiteral().toString();
     }
+
+    @Override
+    public String visitLogicalExpr(Expr.Logical expr) {
+        return parenthesize(expr.operator.getLexeme(), expr.left, expr.right);
+    }
 }

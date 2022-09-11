@@ -105,14 +105,18 @@ public class Parser {
         }
     }
 
+    private Stmt.While whileExpr() {
+        consume(TokenType.LEFT_PARENS, "Expected '(' after while.");
+        final var conditionExpr = expression();
+        consume(TokenType.RIGHT_PARENS, "Expected ')' after while condition");
+        final var bodyStmt = statement();
+        return new Stmt.While(conditionExpr, bodyStmt);
+    }
+
     private Stmt declaration() {
         if (match(TokenType.VAR)) {
             return varDeclaration();
-        } else if (match(TokenType.LEFT_BRACE)) {
-            return block();
-        } else if (match(TokenType.IF)) {
-            return ifBlock();
-        }else {
+        } else {
             return statement();
         }
     }
@@ -120,6 +124,12 @@ public class Parser {
     private Stmt statement() {
         if (match(TokenType.PRINT)) {
             return printStatement();
+        } else if (match(TokenType.LEFT_BRACE)) {
+            return block();
+        } else if (match(TokenType.IF)) {
+            return ifBlock();
+        } else if (match(TokenType.WHILE)) {
+            return whileExpr();
         } else {
             return expressionStatement();
         }
@@ -166,7 +176,7 @@ public class Parser {
     }
 
     private Expr assignment() {
-        final var expr = equality();
+        final var expr = orExpr();
         if (match(TokenType.EQUAL)) {
             final var equals = previous();
             final var value = assignment();
@@ -180,21 +190,25 @@ public class Parser {
         return expr;
     }
 
-//    private Expr orExpr() {
-//        if (match(TokenType.OR)) {
-//
-//        } else {
-//            return equality();
-//        }
-//    }
-//
-//    private Expr andExpr() {
-//        if (match(TokenType.AND)) {
-//
-//        } else {
-//            return equality();
-//        }
-//    }
+    private Expr orExpr() {
+        var expr = andExpr();
+        while (match(TokenType.OR)) {
+            final var operator = previous();
+            final var rightExpr = andExpr();
+            expr = new Expr.Logical(expr, operator, rightExpr);
+        }
+        return expr;
+    }
+
+    private Expr andExpr() {
+        var expr = equality();
+        while (match(TokenType.AND)) {
+            final var operator = previous();
+            final var rightExpr = equality();
+            expr = new Expr.Logical(expr, operator, rightExpr);
+        }
+        return expr;
+    }
 
     private Expr equalityRight(Expr left) {
         if (match(TokenType.EQUAL_EQUAL, TokenType.BANG_EQUAL)) {

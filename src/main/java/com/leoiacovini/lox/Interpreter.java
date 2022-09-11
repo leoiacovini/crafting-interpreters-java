@@ -66,7 +66,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         final var conditionResult = evaluateExpr(stmt.condition);
         if (isTruthy(conditionResult)) {
             executeStmt(stmt.thenBranch);
-        } else if(stmt.elseBranch != null) {
+        } else if (stmt.elseBranch != null) {
             executeStmt(stmt.elseBranch);
         }
         return null;
@@ -76,6 +76,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Void visitPrintStmt(Stmt.Print stmt) {
         final var evaluatedExpr = evaluateExpr(stmt.expression);
         System.out.println(stringify(evaluatedExpr));
+        return null;
+    }
+
+    @Override
+    public Void visitWhileStmt(Stmt.While stmt) {
+        while (isTruthy(evaluateExpr(stmt.condition))) {
+            executeStmt(stmt.body);
+        }
         return null;
     }
 
@@ -182,6 +190,16 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Object visitVariableExpr(Expr.Variable expr) {
         return environment.getVar(expr.name);
+    }
+
+    @Override
+    public Object visitLogicalExpr(Expr.Logical expr) {
+        final var evaluatedLeft = evaluateExpr(expr.left);
+        return switch (expr.operator.getType()) {
+            case AND -> !isTruthy(evaluatedLeft) ? evaluatedLeft : evaluateExpr(expr.right);
+            case OR -> isTruthy(evaluatedLeft) ? evaluatedLeft : evaluateExpr(expr.right);
+            default -> null;
+        };
     }
 
     private boolean isTruthy(Object value) {
