@@ -180,21 +180,21 @@ public class Parser {
         return expr;
     }
 
-    private Expr orExpr() {
-        if (match(TokenType.OR)) {
-
-        } else {
-            return equality();
-        }
-    }
-
-    private Expr andExpr() {
-        if (match(TokenType.AND)) {
-
-        } else {
-            return equality();
-        }
-    }
+//    private Expr orExpr() {
+//        if (match(TokenType.OR)) {
+//
+//        } else {
+//            return equality();
+//        }
+//    }
+//
+//    private Expr andExpr() {
+//        if (match(TokenType.AND)) {
+//
+//        } else {
+//            return equality();
+//        }
+//    }
 
     private Expr equalityRight(Expr left) {
         if (match(TokenType.EQUAL_EQUAL, TokenType.BANG_EQUAL)) {
