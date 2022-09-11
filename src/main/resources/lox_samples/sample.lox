@@ -1,1 +1,9 @@
-print "Hello World"
+print "Hello World";
+print 10 * 20;
+var a = 10 * 20;
+var b = 5 * 3;
+print "Sum Result:";
+print a + b;
+a = "hello";
+print "After Re assign";
+print a;

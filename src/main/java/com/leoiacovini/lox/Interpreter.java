@@ -1,8 +1,13 @@
 package com.leoiacovini.lox;
 
-public class Interpreter implements Expr.Visitor<Object> {
+import java.util.List;
+
+public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+
+    final private Environment environment = new Environment();
 
     static class RuntimeError extends RuntimeException {
+
         final private Token token;
 
         RuntimeError(Token token, String message) {
@@ -13,19 +18,56 @@ public class Interpreter implements Expr.Visitor<Object> {
         public Token getToken() {
             return token;
         }
+
     }
 
-    public void interpret(Expr expr) {
+    public void interpret(List<Stmt> statements) {
         try {
-            final var result = expr.accept(this);
-            System.out.println(stringify(result));
+            for (final var stmt : statements) {
+                execute(stmt);
+            }
         } catch (RuntimeError error) {
             Reporter.runtimeError(error);
         }
     }
 
+    private void execute(Stmt stmt) {
+        stmt.accept(this);
+    }
+
     private Object evaluate(Expr expr) {
         return expr.accept(this);
+    }
+
+    @Override
+    public Void visitExpressionStmt(Stmt.Expression stmt) {
+        evaluate(stmt.expression);
+        return null;
+    }
+
+    @Override
+    public Void visitPrintStmt(Stmt.Print stmt) {
+        final var evaluatedExpr = evaluate(stmt.expression);
+        System.out.println(stringify(evaluatedExpr));
+        return null;
+    }
+
+    @Override
+    public Void visitVarStmt(Stmt.Var stmt) {
+        if (stmt.initializer != null) {
+            final var initialValue = evaluate(stmt.initializer);
+            environment.define(stmt.name.getLexeme(), initialValue);
+        } else {
+            environment.define(stmt.name.getLexeme(), null);
+        }
+        return null;
+    }
+
+    @Override
+    public Object visitAssignExpr(Expr.Assign expr) {
+        final var value = evaluate(expr.value);
+        environment.assign(expr.name, value);
+        return value;
     }
 
     @Override
@@ -108,6 +150,11 @@ public class Interpreter implements Expr.Visitor<Object> {
         } else {
             return evaluate(expr.right);
         }
+    }
+
+    @Override
+    public Object visitVariableExpr(Expr.Variable expr) {
+        return environment.getVar(expr.name);
     }
 
     private boolean isTruthy(Object value) {

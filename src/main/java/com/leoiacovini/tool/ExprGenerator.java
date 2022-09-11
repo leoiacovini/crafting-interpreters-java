@@ -59,7 +59,6 @@ public class ExprGenerator {
         writer.println();
         writer.println("import java.util.List;");
         writer.println();
-//        writer.println("import com.leoiacovini.lox.Token;");
         writer.println();
         writer.println("abstract class " + baseName + " {");
 
@@ -88,6 +87,11 @@ public class ExprGenerator {
         final var astDescription = loadDefinitions();
 
         defineAst(outDir, "Expr", astDescription);
+        defineAst(outDir, "Stmt", List.of(
+                "Expression: Expr expression",
+                "Print: Expr expression",
+                "Var: Token name, Expr initializer"
+        ));
 
     }
 

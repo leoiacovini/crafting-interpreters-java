@@ -1,7 +1,7 @@
 package com.leoiacovini.lox;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import com.leoiacovini.lox.Token.TokenType;
 
@@ -17,12 +17,16 @@ public class Parser {
         this.tokens = tokens;
     }
 
-    public Optional<Expr> parse() {
-        try {
-            return Optional.of(expression());
-        } catch (ParseError e) {
-            return Optional.empty();
+    public List<Stmt> parse() {
+        final var statements = new ArrayList<Stmt>();
+        while (!isAtEnd()) {
+            try {
+                statements.add(declaration());
+            } catch (ParseError error) {
+                synchronize();
+            }
         }
+        return statements;
     }
 
     private boolean isAtEnd() {
@@ -79,20 +83,75 @@ public class Parser {
         }
     }
 
+    private Stmt declaration() {
+        if (match(TokenType.VAR)) {
+            return varDeclaration();
+        } else {
+            return statement();
+        }
+    }
+
+    private Stmt statement() {
+        if (match(TokenType.PRINT)) {
+            return printStatement();
+        } else {
+            return expressionStatement();
+        }
+    }
+
+    private Stmt.Print printStatement() {
+        final var expr = expression();
+        consume(TokenType.SEMICOLON, "Missing ';' after value.");
+        return new Stmt.Print(expr);
+    }
+
+    private Stmt.Expression expressionStatement() {
+        final var expr = expression();
+        consume(TokenType.SEMICOLON, "Missing ';' after expression.");
+        return new Stmt.Expression(expr);
+    }
+
+    private Stmt.Var varDeclaration() {
+        final var identifierToken = consume(TokenType.IDENTIFIER, "Expected variable name after 'var'.");
+        if (match(TokenType.EQUAL)) {
+            final var initializerExpr = expression();
+            consume(TokenType.SEMICOLON, "Missing ';' after variable declaration.");
+            return new Stmt.Var(identifierToken, initializerExpr);
+        } else {
+            consume(TokenType.SEMICOLON, "Missing ';' after variable declaration.");
+            return new Stmt.Var(identifierToken, null);
+        }
+    }
+
     private Expr expression() {
         return ternary();
     }
 
     private Expr ternary() {
-        final var conditionExpr = equality();
+        final var conditionExpr = assignment();
         if (match(TokenType.QUESTION)) {
             final var questionOperator = previous();
-            final var leftExpr = equality();
+            final var leftExpr = assignment();
             consume(TokenType.COLON, "Expected ':' on ternary operator");
-            final var rightExpr = equality();
+            final var rightExpr = assignment();
             return new Expr.Ternary(questionOperator, conditionExpr, leftExpr, rightExpr);
         }
         return conditionExpr;
+    }
+
+    private Expr assignment() {
+        final var expr = equality();
+        if (match(TokenType.EQUAL)) {
+            final var equals = previous();
+            final var value = assignment();
+            if (expr instanceof Expr.Variable) {
+                final var name = ((Expr.Variable) expr).name;
+                return new Expr.Assign(name, value);
+            }
+            //noinspection ThrowableNotThrown
+            error(equals, "Invalid assignment target.");
+        }
+        return expr;
     }
 
     private Expr equalityRight(Expr left) {
@@ -154,6 +213,7 @@ public class Parser {
         if (match(TokenType.TRUE)) return new Expr.Literal(true);
         if (match(TokenType.NIL)) return new Expr.Literal(null);
         if (match(TokenType.STRING, TokenType.NUMBER)) return new Expr.Literal(previous().getLiteral());
+        if (match(TokenType.IDENTIFIER)) return new Expr.Variable(previous());
         if (match(TokenType.LEFT_PARENS)) {
             final var expr = expression();
             consume(TokenType.RIGHT_PARENS, "Expect ')' after expression.");
@@ -161,4 +221,9 @@ public class Parser {
         }
         throw error(peek(), "Expect expression");
     }
+
+//    private Expr.Variable variable() {
+//        final var identifierToken = consume(TokenType.IDENTIFIER, "Expected Identifier after.");
+//        return new Expr.Variable(identifierToken);
+//    }
 }

@@ -16,7 +16,7 @@ public class Main {
         final var parser = new Parser(scanner.scanTokens());
         final var expr = parser.parse();
         if (Reporter.hadError || expr.isEmpty()) return;
-        interpreter.interpret(expr.get());
+        interpreter.interpret(expr);
     }
 
     private static void runPrompt() throws IOException {
