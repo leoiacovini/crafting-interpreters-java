@@ -113,6 +113,50 @@ public class Parser {
         return new Stmt.While(conditionExpr, bodyStmt);
     }
 
+    // "for" expression is implemented using some "syntax sugar" approach on top of other existing statements
+    private Stmt forExpr() {
+        consume(TokenType.LEFT_PARENS, "Expected '(' after for.");
+
+        Stmt initializer;
+        if (match(TokenType.SEMICOLON)) {
+            initializer = null;
+        } else if (match(TokenType.VAR)) {
+            initializer = varDeclaration();
+        } else {
+            initializer = expressionStatement();
+        }
+
+        Expr condition = null;
+        if (!check(TokenType.SEMICOLON)) {
+            condition = expression();
+        }
+        consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+
+        Expr increment = null;
+        if (!check(TokenType.RIGHT_PARENS)) {
+            increment = expression();
+        }
+        consume(TokenType.RIGHT_PARENS, "Expect ')' after for clauses.");
+
+        var body = statement();
+
+        if (increment != null) {
+            body = new Stmt.Block(List.of(body, new Stmt.Expression(increment)));
+        }
+
+        if (condition == null) {
+            condition = new Expr.Literal(true);
+        }
+
+        body = new Stmt.While(condition, body);
+
+        if (initializer != null) {
+            body = new Stmt.Block(List.of(initializer, body));
+        }
+
+        return body;
+    }
+
     private Stmt declaration() {
         if (match(TokenType.VAR)) {
             return varDeclaration();
@@ -130,6 +174,8 @@ public class Parser {
             return ifBlock();
         } else if (match(TokenType.WHILE)) {
             return whileExpr();
+        } else if (match(TokenType.FOR)) {
+            return forExpr();
         } else {
             return expressionStatement();
         }
