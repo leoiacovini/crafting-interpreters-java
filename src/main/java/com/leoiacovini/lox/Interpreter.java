@@ -1,18 +1,10 @@
 package com.leoiacovini.lox;
 
+import com.leoiacovini.lox.globals.Clock;
+
 import java.util.List;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
-
-    final private Environment environment;
-
-    Interpreter(Environment environment) {
-        this.environment = environment;
-    }
-
-    Interpreter() {
-        this(new Environment());
-    }
 
     static class RuntimeError extends RuntimeException {
 
@@ -27,6 +19,26 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             return token;
         }
 
+    }
+
+    final private Environment environment;
+
+    Interpreter(Environment environment) {
+        this.environment = environment;
+        // we just to that if we are on the most top level Environment
+        if (environment.getEnclosing() == null) {
+            List.of(new Clock()).forEach(f -> {
+                this.environment.define(f.name(), f);
+            });
+        }
+    }
+
+    Interpreter() {
+        this(new Environment());
+    }
+
+    public Environment getEnvironment() {
+        return this.environment;
     }
 
     public void interpret(List<Stmt> statements) {
@@ -47,11 +59,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return expr.accept(this);
     }
 
+    public void interpretBlock(List<Stmt> block, Environment environment) {
+        final var innerInterpreter = new Interpreter(environment);
+        innerInterpreter.interpret(block);
+    }
+
     @Override
     public Void visitBlockStmt(Stmt.Block stmt) {
         final var innerEnv = new Environment(this.environment);
-        final var innerInterpreter = new Interpreter(innerEnv);
-        innerInterpreter.interpret(stmt.statements);
+        interpretBlock(stmt.statements, environment);
         return null;
     }
 
@@ -69,6 +85,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         } else if (stmt.elseBranch != null) {
             executeStmt(stmt.elseBranch);
         }
+        return null;
+    }
+
+    @Override
+    public Void visitFunctionStmt(Stmt.Function stmt) {
+        final var loxFunction = new LoxFunction(stmt);
+        environment.define(stmt.name.getLexeme(), loxFunction);
         return null;
     }
 
@@ -200,6 +223,20 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             case OR -> isTruthy(evaluatedLeft) ? evaluatedLeft : evaluateExpr(expr.right);
             default -> null;
         };
+    }
+
+    @Override
+    public Object visitCallExpr(Expr.Call expr) {
+        final var callee = evaluateExpr(expr.callee);
+        final var args = expr.args.stream().map(this::evaluateExpr).toList();
+        if (!(callee instanceof LoxCallable)) {
+            throw new RuntimeError(expr.paren, "Can only call functions and classes.");
+        }
+        final var calleeFn = (LoxCallable) callee;
+        if (calleeFn.arity() != args.size()) {
+            throw new RuntimeError(expr.paren, "Expected " + calleeFn.arity() + " arguments but got " + args.size() + ".");
+        }
+        return calleeFn.call(args, this);
     }
 
     private boolean isTruthy(Object value) {

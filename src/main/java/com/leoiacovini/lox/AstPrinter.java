@@ -56,4 +56,9 @@ public class AstPrinter implements Expr.Visitor<String> {
     public String visitLogicalExpr(Expr.Logical expr) {
         return parenthesize(expr.operator.getLexeme(), expr.left, expr.right);
     }
+
+    @Override
+    public String visitCallExpr(Expr.Call expr) {
+        return parenthesize(print(expr.callee), expr.args.toArray(Expr[]::new));
+    }
 }

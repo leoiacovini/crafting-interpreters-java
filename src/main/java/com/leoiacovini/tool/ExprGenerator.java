@@ -90,6 +90,7 @@ public class ExprGenerator {
                 "Block: List<Stmt> statements",
                 "Expression: Expr expression",
                 "If: Expr condition, Stmt thenBranch, Stmt elseBranch",
+                "Function: Token name, List<Token> params, List<Stmt> body",
                 "Print: Expr expression",
                 "While: Expr condition, Stmt body",
                 "Var: Token name, Expr initializer"

@@ -157,9 +157,30 @@ public class Parser {
         return body;
     }
 
+    private Stmt.Function functionDeclaration(String kind) {
+        final var name = consume(TokenType.IDENTIFIER, "Expected " + kind + " name.");
+        consume(TokenType.LEFT_PARENS, "Expected '(' after " + kind + "definition");
+        final var args = new ArrayList<Token>();
+        if (!check(TokenType.RIGHT_PARENS)) {
+            do {
+                if (args.size() >= 255) {
+                    //noinspection ThrowableNotThrown
+                    error(peek(), "Can't have more than 255 parameters.");
+                }
+                args.add(consume(TokenType.IDENTIFIER, "Expected parameter name."));
+            } while (match(TokenType.COMMA));
+        }
+        consume(TokenType.RIGHT_PARENS, "Expected ')' after function arguments declaration.");
+        consume(TokenType.LEFT_BRACE, "Expected '{' before " + kind  + "body");
+        final var body = block();
+        return new Stmt.Function(name, args, body.statements);
+    }
+
     private Stmt declaration() {
         if (match(TokenType.VAR)) {
             return varDeclaration();
+        } else if (match(TokenType.FUN)) {
+            return functionDeclaration("function");
         } else {
             return statement();
         }
@@ -307,7 +328,32 @@ public class Parser {
             final var expr = unary();
             return new Expr.Unary(operator, expr);
         }
-        return primary();
+        return call();
+    }
+
+    private List<Expr> callArgs() {
+        final var args = new ArrayList<Expr>();
+        while (!check(TokenType.RIGHT_PARENS)) {
+            args.add(expression());
+            if (args.size() >= 255) {
+                //noinspection ThrowableNotThrown
+                error(peek(), "Can't have a function call with more than 255 arguments");
+            }
+            if (!match(TokenType.COMMA)) break;
+        }
+        consume(TokenType.RIGHT_PARENS, "Expected ')' after function call");
+        return args;
+    }
+
+    private Expr call() {
+        final var primaryExpr = primary();
+
+        if (match(TokenType.LEFT_PARENS)) {
+            final var args = callArgs();
+            return new Expr.Call(primaryExpr, previous(), args);
+        }
+
+        return primaryExpr;
     }
 
     private Expr primary() {

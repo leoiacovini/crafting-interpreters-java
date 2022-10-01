@@ -6,3 +6,4 @@ Unary: Token operator, Expr right
 Ternary: Token operator, Expr condition, Expr left, Expr right
 Variable: Token name
 Logical: Expr left, Token operator, Expr right
+Call: Expr callee, Token paren, List<Expr> args
