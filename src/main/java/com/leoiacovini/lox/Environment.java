@@ -44,4 +44,8 @@ public class Environment {
         }
     }
 
+    @Override
+    public String toString() {
+        return "<Environment " + values.toString() + " >";
+    }
 }

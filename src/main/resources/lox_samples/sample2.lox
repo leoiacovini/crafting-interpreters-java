@@ -1,0 +1,15 @@
+fun makeCounter(initialValue) {
+  var i = initialValue;
+  fun count() {
+    i = i + 1;
+    print i;
+  }
+
+  return count;
+}
+
+var initialValue = 0;
+
+var counter = makeCounter(initialValue);
+counter(); // "1".
+counter(); // "2".

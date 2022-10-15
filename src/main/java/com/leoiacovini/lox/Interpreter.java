@@ -40,9 +40,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         this.environment = environment;
         // we just to that if we are on the most top level Environment
         if (environment.getEnclosing() == null) {
-            List.of(new Clock()).forEach(f -> {
-                this.environment.define(f.name(), f);
-            });
+            List.of(new Clock()).forEach(f -> this.environment.define(f.name(), f));
         }
     }
 
@@ -103,7 +101,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitFunctionStmt(Stmt.Function stmt) {
-        final var loxFunction = new LoxFunction(stmt);
+        final var loxFunction = new LoxFunction(stmt, environment);
         environment.define(stmt.name.getLexeme(), loxFunction);
         return null;
     }
@@ -249,10 +247,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Object visitCallExpr(Expr.Call expr) {
         final var callee = evaluateExpr(expr.callee);
         final var args = expr.args.stream().map(this::evaluateExpr).toList();
-        if (!(callee instanceof LoxCallable)) {
+        if (!(callee instanceof final LoxCallable calleeFn)) {
             throw new RuntimeError(expr.paren, "Can only call functions and classes.");
         }
-        final var calleeFn = (LoxCallable) callee;
         if (calleeFn.arity() != args.size()) {
             throw new RuntimeError(expr.paren, "Expected " + calleeFn.arity() + " arguments but got " + args.size() + ".");
         }
