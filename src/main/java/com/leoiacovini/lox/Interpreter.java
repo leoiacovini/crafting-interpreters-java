@@ -21,6 +21,19 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     }
 
+    static class Return extends RuntimeException {
+        final private Object value;
+
+        Return(Object value) {
+            super(null, null, false, false);
+            this.value = value;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+    }
+
     final private Environment environment;
 
     Interpreter(Environment environment) {
@@ -108,6 +121,13 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             executeStmt(stmt.body);
         }
         return null;
+    }
+
+    @Override
+    public Void visitReturnStmt(Stmt.Return stmt) {
+        Object value = null;
+        if (stmt.value != null) value = evaluateExpr(stmt.value);
+        throw new Return(value);
     }
 
     @Override

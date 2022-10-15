@@ -186,6 +186,16 @@ public class Parser {
         }
     }
 
+    private Stmt.Return returnStatement() {
+        final var keyword = previous();
+        Expr value = null;
+        if (!check(TokenType.SEMICOLON)) {
+            value = expression();
+        }
+        consume(TokenType.SEMICOLON, "Expected ';' after return value.");
+        return new Stmt.Return(keyword, value);
+    }
+
     private Stmt statement() {
         if (match(TokenType.PRINT)) {
             return printStatement();
@@ -197,6 +207,8 @@ public class Parser {
             return whileExpr();
         } else if (match(TokenType.FOR)) {
             return forExpr();
+        } else if (match(TokenType.RETURN)) {
+            return returnStatement();
         } else {
             return expressionStatement();
         }
@@ -370,8 +382,4 @@ public class Parser {
         throw error(peek(), "Expect expression");
     }
 
-//    private Expr.Variable variable() {
-//        final var identifierToken = consume(TokenType.IDENTIFIER, "Expected Identifier after.");
-//        return new Expr.Variable(identifierToken);
-//    }
 }

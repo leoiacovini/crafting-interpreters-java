@@ -93,6 +93,7 @@ public class ExprGenerator {
                 "Function: Token name, List<Token> params, List<Stmt> body",
                 "Print: Expr expression",
                 "While: Expr condition, Stmt body",
+                "Return: Token keyword, Expr value",
                 "Var: Token name, Expr initializer"
         ));
 

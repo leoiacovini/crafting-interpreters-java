@@ -17,10 +17,13 @@ public class LoxFunction implements LoxCallable {
         for (var i = 0; i < declaration.params.size(); i++) {
             final var varName = declaration.params.get(i).getLexeme();
             final var varValue = args.get(i);
-//            System.out.println("Defining '" + varName + "' with value '" + varValue + "'");
             env.define(varName, varValue);
         }
-        interpreter.interpretBlock(declaration.body, env);
+        try {
+            interpreter.interpretBlock(declaration.body, env);
+        } catch (Interpreter.Return returnValue) {
+            return returnValue.getValue();
+        }
         return null;
     }
 

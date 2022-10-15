@@ -2,7 +2,7 @@ package com.leoiacovini.lox;
 
 import java.util.List;
 
-public abstract class Stmt {
+abstract class Stmt {
     interface Visitor<R> {
         R visitBlockStmt(Block stmt);
 
@@ -15,6 +15,8 @@ public abstract class Stmt {
         R visitPrintStmt(Print stmt);
 
         R visitWhileStmt(While stmt);
+
+        R visitReturnStmt(Return stmt);
 
         R visitVarStmt(Var stmt);
     }
@@ -62,7 +64,7 @@ public abstract class Stmt {
         final Stmt elseBranch;
     }
 
-    public static class Function extends Stmt {
+    static class Function extends Stmt {
         Function(Token name, List<Token> params, List<Stmt> body) {
             this.name = name;
             this.params = params;
@@ -105,6 +107,21 @@ public abstract class Stmt {
 
         final Expr condition;
         final Stmt body;
+    }
+
+    static class Return extends Stmt {
+        Return(Token keyword, Expr value) {
+            this.keyword = keyword;
+            this.value = value;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitReturnStmt(this);
+        }
+
+        final Token keyword;
+        final Expr value;
     }
 
     static class Var extends Stmt {
