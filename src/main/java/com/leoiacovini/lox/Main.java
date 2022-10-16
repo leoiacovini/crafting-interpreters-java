@@ -16,6 +16,11 @@ public class Main {
         final var parser = new Parser(scanner.scanTokens());
         final var statements = parser.parse();
         if (Reporter.hadError || statements.isEmpty()) return;
+
+        final var resolver = new Resolver(interpreter);
+
+        resolver.resolve(statements);
+
         interpreter.interpret(statements);
     }
 

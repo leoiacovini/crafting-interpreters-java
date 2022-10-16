@@ -44,6 +44,28 @@ public class Environment {
         }
     }
 
+    public Environment copy() {
+        final var env = new Environment(this.enclosing != null ? this.enclosing.copy() : null);
+        this.values.forEach(env::define);
+        return env;
+    }
+
+    public Environment ancestor(Integer distance) {
+        var env = this;
+        for (int i = 0; i < distance; i++) {
+            env = env.enclosing;
+        }
+        return env;
+    }
+
+    public Object getAt(Integer distance, String name) {
+        return ancestor(distance).values.get(name);
+    }
+
+    public void assignAt(Integer distance, Token varName, Object value) {
+        ancestor(distance).assign(varName, value);
+    }
+
     @Override
     public String toString() {
         return "<Environment " + values.toString() + " >";

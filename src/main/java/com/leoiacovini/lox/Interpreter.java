@@ -2,12 +2,13 @@ package com.leoiacovini.lox;
 
 import com.leoiacovini.lox.globals.Clock;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     static class RuntimeError extends RuntimeException {
-
         final private Token token;
 
         RuntimeError(Token token, String message) {
@@ -18,7 +19,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         public Token getToken() {
             return token;
         }
-
     }
 
     static class Return extends RuntimeException {
@@ -34,18 +34,22 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
     }
 
-    final private Environment environment;
+    private final Environment environment;
+    private final Environment globalEnv;
+    private final Map<Expr, Integer> locals;
 
-    Interpreter(Environment environment) {
+    Interpreter(Environment environment, Environment globalEnv, Map<Expr, Integer> locals) {
         this.environment = environment;
-        // we just to that if we are on the most top level Environment
-        if (environment.getEnclosing() == null) {
-            List.of(new Clock()).forEach(f -> this.environment.define(f.name(), f));
-        }
+        this.globalEnv = globalEnv;
+        this.locals = locals;
     }
 
     Interpreter() {
-        this(new Environment());
+        final var globalEnv = new Environment();
+        List.of(new Clock()).forEach(f -> globalEnv.define(f.name(), f));
+        this.environment = globalEnv;
+        this.globalEnv = globalEnv;
+        this.locals = new HashMap<>();
     }
 
     public Environment getEnvironment() {
@@ -66,19 +70,23 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         stmt.accept(this);
     }
 
+    public void resolve(Expr expr, int depth) {
+        locals.put(expr, depth);
+    }
+
     private Object evaluateExpr(Expr expr) {
         return expr.accept(this);
     }
 
     public void interpretBlock(List<Stmt> block, Environment environment) {
-        final var innerInterpreter = new Interpreter(environment);
+        final var innerInterpreter = new Interpreter(new Environment(environment), this.globalEnv, this.locals);
         innerInterpreter.interpret(block);
     }
 
     @Override
     public Void visitBlockStmt(Stmt.Block stmt) {
         final var innerEnv = new Environment(this.environment);
-        interpretBlock(stmt.statements, environment);
+        interpretBlock(stmt.statements, innerEnv);
         return null;
     }
 
@@ -142,7 +150,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Object visitAssignExpr(Expr.Assign expr) {
         final var value = evaluateExpr(expr.value);
-        environment.assign(expr.name, value);
+        final var distance = locals.get(expr);
+        if (distance != null) {
+            environment.assignAt(distance, expr.name, value);
+        } else {
+            globalEnv.assign(expr.name, value);
+        }
         return value;
     }
 
@@ -228,9 +241,18 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
     }
 
+    private Object lookupVariable(Token name, Expr expr) {
+        final var distance = locals.get(expr);
+        if (distance != null) {
+            return environment.getAt(distance, name.getLexeme());
+        } else {
+            return globalEnv.getVar(name);
+        }
+    }
+
     @Override
     public Object visitVariableExpr(Expr.Variable expr) {
-        return environment.getVar(expr.name);
+        return lookupVariable(expr.name, expr);
     }
 
     @Override

@@ -15,7 +15,6 @@ public class LoxFunction implements LoxCallable {
     @Override
     public Object call(List<Object> args, Interpreter interpreter) {
         final var env = new Environment(closureEnv);
-        //final var env = new Environment(interpreter.getEnvironment());
         // Prepare environment biding provided arguments to their respective variable name
         for (var i = 0; i < declaration.params.size(); i++) {
             final var varName = declaration.params.get(i).getLexeme();

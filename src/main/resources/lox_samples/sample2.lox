@@ -1,15 +1,12 @@
-fun makeCounter(initialValue) {
-  var i = initialValue;
-  fun count() {
-    i = i + 1;
-    print i;
+// Another Tests
+
+var a = "global";
+{
+  fun showA() {
+    print a;
   }
 
-  return count;
+  showA();
+  var a = "block";
+  showA();
 }
-
-var initialValue = 0;
-
-var counter = makeCounter(initialValue);
-counter(); // "1".
-counter(); // "2".
