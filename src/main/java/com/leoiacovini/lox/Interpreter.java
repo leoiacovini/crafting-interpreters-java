@@ -118,6 +118,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visitClassStmt(Stmt.Class stmt) {
+        environment.define(stmt.name.getLexeme(), null);
+        final List<LoxFunction> fns = stmt.methods.stream().map(m -> new LoxFunction(m, environment)).toList();
+        LoxClass klass = new LoxClass(stmt.name.getLexeme(), fns);
+        environment.assign(stmt.name, klass);
+        return null;
+    }
+
+    @Override
     public Void visitPrintStmt(Stmt.Print stmt) {
         final var evaluatedExpr = evaluateExpr(stmt.expression);
         System.out.println(stringify(evaluatedExpr));
@@ -162,6 +171,14 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             globalEnv.assign(expr.name, value);
         }
         return value;
+    }
+
+    @Override
+    public Object visitSetExpr(Expr.Set expr) {
+        final LoxInstance instance = (LoxInstance) evaluateExpr(expr.object);
+        final Object value = evaluateExpr(expr.value);
+        instance.set(expr.name, value);
+        return null;
     }
 
     @Override
@@ -262,6 +279,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Object visitThisExpr(Expr.This expr) {
+        return lookupVariable(expr.keyword, expr);
+    }
+
+    @Override
     public Object visitLogicalExpr(Expr.Logical expr) {
         final var evaluatedLeft = evaluateExpr(expr.left);
         return switch (expr.operator.getType()) {
@@ -288,6 +310,12 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         if (value instanceof Boolean) {
             return (boolean) value;
         } else return value != null;
+    }
+
+    @Override
+    public Object visitGetExpr(Expr.Get expr) {
+        final LoxInstance instance = (LoxInstance) evaluateExpr(expr.object);
+        return instance.get(expr.name);
     }
 
     private boolean isEqual(Object first, Object second) {

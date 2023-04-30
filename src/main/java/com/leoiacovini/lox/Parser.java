@@ -172,9 +172,21 @@ public class Parser {
             } while (match(TokenType.COMMA));
         }
         consume(TokenType.RIGHT_PARENS, "Expected ')' after function arguments declaration.");
-        consume(TokenType.LEFT_BRACE, "Expected '{' before " + kind  + "body");
+        consume(TokenType.LEFT_BRACE, "Expected '{' before " + kind + "body");
         final var body = block();
         return new Stmt.Function(name, args, body.statements);
+    }
+
+    private Stmt.Class classDeclaration() {
+        final Token className = consume(TokenType.IDENTIFIER, "Expected class name after 'class' keyword.");
+        consume(TokenType.LEFT_BRACE, "Expected '{' after class name.");
+        List<Stmt.Function> methods = new ArrayList<>();
+        while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
+            final Stmt.Function method = functionDeclaration("method");
+            methods.add(method);
+        }
+        consume(TokenType.RIGHT_BRACE, "Expectect '}' after class body.");
+        return new Stmt.Class(className, methods);
     }
 
     private Stmt declaration() {
@@ -182,6 +194,8 @@ public class Parser {
             return varDeclaration();
         } else if (match(TokenType.FUN)) {
             return functionDeclaration("function");
+        } else if (match(TokenType.CLASS)) {
+            return classDeclaration();
         } else {
             return statement();
         }
@@ -260,9 +274,10 @@ public class Parser {
         if (match(TokenType.EQUAL)) {
             final var equals = previous();
             final var value = assignment();
-            if (expr instanceof Expr.Variable) {
-                final var name = ((Expr.Variable) expr).name;
-                return new Expr.Assign(name, value);
+            if (expr instanceof Expr.Variable variable) {
+                return new Expr.Assign(variable.name, value);
+            } else if (expr instanceof Expr.Get getter) {
+                return new Expr.Set(getter.object, getter.name, value);
             }
             //noinspection ThrowableNotThrown
             error(equals, "Invalid assignment target.");
@@ -359,14 +374,19 @@ public class Parser {
     }
 
     private Expr call() {
-        final var primaryExpr = primary();
-
-        if (match(TokenType.LEFT_PARENS)) {
-            final var args = callArgs();
-            return new Expr.Call(primaryExpr, previous(), args);
+        var expr = primary();
+        while (true) {
+            if (match(TokenType.LEFT_PARENS)) {
+                final var args = callArgs();
+                expr = new Expr.Call(expr, previous(), args);
+            } else if (match(TokenType.DOT)) {
+                final Token name = consume(TokenType.IDENTIFIER, "Expected property name after '.'.");
+                expr = new Expr.Get(expr, name);
+            } else {
+                break;
+            }
         }
-
-        return primaryExpr;
+        return expr;
     }
 
     private Expr primary() {
@@ -375,6 +395,7 @@ public class Parser {
         if (match(TokenType.NIL)) return new Expr.Literal(null);
         if (match(TokenType.STRING, TokenType.NUMBER)) return new Expr.Literal(previous().getLiteral());
         if (match(TokenType.IDENTIFIER)) return new Expr.Variable(previous());
+        if (match(TokenType.THIS)) return new Expr.This(previous());
         if (match(TokenType.LEFT_PARENS)) {
             final var expr = expression();
             consume(TokenType.RIGHT_PARENS, "Expect ')' after expression.");

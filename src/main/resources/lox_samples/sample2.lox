@@ -1,5 +1,28 @@
 // Another Tests
 
+class TestClass {
+    callMe() {
+        print "calling me " + this.name;
+    }
+}
+
+print TestClass;
+var instance = TestClass();
+print instance;
+
+fun notMethod(argument) {
+  print "called function with " + argument;
+}
+
+instance.myMethod = notMethod;
+
+instance.name = "Leo";
+instance.myMethod("Argument");
+
+print instance.name;
+
+instance.callMe();
+
 var a = "global";
 {
   fun showA() {

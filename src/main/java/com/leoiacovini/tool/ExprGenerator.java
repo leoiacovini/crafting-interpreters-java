@@ -88,6 +88,7 @@ public class ExprGenerator {
         defineAst(outDir, "Expr", astDescription);
         defineAst(outDir, "Stmt", List.of(
                 "Block: List<Stmt> statements",
+                "Class: Token name, List<Stmt.Function> methods",
                 "Expression: Expr expression",
                 "If: Expr condition, Stmt thenBranch, Stmt elseBranch",
                 "Function: Token name, List<Token> params, List<Stmt> body",

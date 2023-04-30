@@ -12,6 +12,12 @@ public class LoxFunction implements LoxCallable {
     private final Stmt.Function declaration;
     private final Environment closureEnv;
 
+    public LoxFunction bind(LoxInstance instance) {
+        final Environment environment = new Environment(closureEnv);
+        environment.define("this", instance);
+        return new LoxFunction(this.declaration, environment);
+    }
+
     @Override
     public Object call(List<Object> args, Interpreter interpreter) {
         final var env = new Environment(closureEnv);
