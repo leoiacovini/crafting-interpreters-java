@@ -16,17 +16,21 @@ public class LoxFunction implements LoxCallable {
     public Object call(List<Object> args, Interpreter interpreter) {
         final var env = new Environment(closureEnv);
         // Prepare environment biding provided arguments to their respective variable name
-        for (var i = 0; i < declaration.params.size(); i++) {
-            final var varName = declaration.params.get(i).getLexeme();
-            final var varValue = args.get(i);
-            env.define(varName, varValue);
-        }
+        defineEnvArguments(args, env);
         try {
             interpreter.interpretBlock(declaration.body, env);
         } catch (Interpreter.Return returnValue) {
             return returnValue.getValue();
         }
         return null;
+    }
+
+    private void defineEnvArguments(List<Object> args, Environment env) {
+        for (var i = 0; i < declaration.params.size(); i++) {
+            final var varName = declaration.params.get(i).getLexeme();
+            final var varValue = args.get(i);
+            env.define(varName, varValue);
+        }
     }
 
     @Override

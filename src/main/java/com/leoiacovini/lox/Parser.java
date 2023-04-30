@@ -76,8 +76,9 @@ public class Parser {
         while (!isAtEnd()) {
             if (previous().getType() == TokenType.SEMICOLON) return;
             switch (peek().getType()) {
-                case CLASS, FUN, VAR, FOR, WHILE, IF, PRINT, RETURN:
+                case CLASS, FUN, VAR, FOR, WHILE, IF, PRINT, RETURN -> {
                     return;
+                }
             }
             advance();
         }

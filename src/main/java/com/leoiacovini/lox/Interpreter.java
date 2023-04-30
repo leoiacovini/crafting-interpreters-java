@@ -78,15 +78,18 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return expr.accept(this);
     }
 
+    private Interpreter fork(Environment environment) {
+        return new Interpreter(environment, this.globalEnv, this.locals);
+    }
+
     public void interpretBlock(List<Stmt> block, Environment environment) {
-        final var innerInterpreter = new Interpreter(new Environment(environment), this.globalEnv, this.locals);
+        final var innerInterpreter = fork(environment);
         innerInterpreter.interpret(block);
     }
 
     @Override
     public Void visitBlockStmt(Stmt.Block stmt) {
-        final var innerEnv = new Environment(this.environment);
-        interpretBlock(stmt.statements, innerEnv);
+        interpretBlock(stmt.statements, this.environment.newChild());
         return null;
     }
 
@@ -149,8 +152,10 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitAssignExpr(Expr.Assign expr) {
+        Reporter.debug("starting assignExpr for " + expr.name.getLexeme());
         final var value = evaluateExpr(expr.value);
         final var distance = locals.get(expr);
+        Reporter.debug("assignExpr: " + expr + " with value " + value + " at distance: " + distance);
         if (distance != null) {
             environment.assignAt(distance, expr.name, value);
         } else {
@@ -243,6 +248,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     private Object lookupVariable(Token name, Expr expr) {
         final var distance = locals.get(expr);
+        Reporter.debug("lookupVariable `" + name.getLexeme() + "` at distance: " + distance);
         if (distance != null) {
             return environment.getAt(distance, name.getLexeme());
         } else {

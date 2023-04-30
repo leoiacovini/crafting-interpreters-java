@@ -20,6 +20,10 @@ public class Environment {
         return enclosing;
     }
 
+    public Environment newChild() {
+        return new Environment(this);
+    }
+
     public void define(String varName, Object value) {
         values.put(varName, value);
     }
@@ -63,7 +67,7 @@ public class Environment {
     }
 
     public void assignAt(Integer distance, Token varName, Object value) {
-        ancestor(distance).assign(varName, value);
+        ancestor(distance).values.put(varName.getLexeme(), value);
     }
 
     @Override

@@ -7,10 +7,17 @@ import java.util.Stack;
 
 public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
-    private final Interpreter interpreter;
-    private final Stack<Map<String, Boolean>> scopes = new Stack<>();
+    enum TokenBindingStatus {
+        /// Token is declared but not ready to be used
+        DECLARED,
+        /// Token is defined and ready to usage
+        DEFINED,
+    }
 
-    public Stack<Map<String, Boolean>> getScopes() {
+    private final Interpreter interpreter;
+    private final Stack<Map<String, TokenBindingStatus>> scopes = new Stack<>();
+
+    public Stack<Map<String, TokenBindingStatus>> getScopes() {
         return scopes;
     }
 
@@ -33,10 +40,12 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
 
     private void beginScope() {
+        Reporter.debug("BEGIN SCOPE");
         scopes.push(new HashMap<>());
     }
 
     private void endScope() {
+        Reporter.debug("END SCOPE");
         scopes.pop();
     }
 
@@ -80,19 +89,27 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
 
     private void resolveLocal(Expr expr, Token name) {
-        for (int i = scopes.size() - 1; i >= 0; i--) {
+        final int size = scopes.size() - 1;
+        Reporter.debug("Starting resolveLocal for " + name.getLexeme() + " with scopes: " + scopes);
+        for (int i = size; i >= 0; i--) {
             if (scopes.get(i).containsKey(name.getLexeme())) {
-                interpreter.resolve(expr, scopes.size() - 1 - i);
+                Reporter.debug("resolveLocal: " + name.getLexeme() + " at scope index: " + i);
+                Reporter.debug("Current Scope: " + scopes.get(i));
+                interpreter.resolve(expr, size - i);
                 return;
             }
         }
     }
 
+    private boolean variableIsDeclared(Expr.Variable expr) {
+        final String lexeme = expr.name.getLexeme();
+        return !scopes.isEmpty() && scopes.peek().get(lexeme) == TokenBindingStatus.DECLARED;
+    }
+
     @Override
     public Void visitVariableExpr(Expr.Variable expr) {
-        if (!scopes.isEmpty() &&
-             scopes.peek().get(expr.name.getLexeme()) == Boolean.FALSE) {
-            Reporter.error(expr.name, "Cannot read local variable is it's own initializer");
+        if (variableIsDeclared(expr)) {
+            Reporter.error(expr.name, "Can't read local variable in it's own initializer.");
         }
         resolveLocal(expr, expr.name);
         return null;
@@ -135,13 +152,13 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         return null;
     }
 
-    private void resolveFunction(Stmt.Function stmt) {
+    private void resolveFunction(Stmt.Function function) {
         beginScope();
-        for (final var param : stmt.params) {
+        for (final var param : function.params) {
             declare(param);
             define(param);
         }
-        resolve(stmt.body);
+        resolve(function.body);
         endScope();
     }
 
@@ -174,12 +191,14 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     private void declare(Token name) {
         if (scopes.isEmpty()) return;
-        scopes.peek().put(name.getLexeme(), false);
+        Reporter.debug("Declaring new token: " + name.getLexeme());
+        scopes.peek().put(name.getLexeme(), TokenBindingStatus.DECLARED);
     }
 
     private void define(Token name) {
         if (scopes.isEmpty()) return;
-        scopes.peek().put(name.getLexeme(), true);
+        Reporter.debug("Defining new token: " + name.getLexeme());
+        scopes.peek().put(name.getLexeme(), TokenBindingStatus.DEFINED);
     }
 
     @Override

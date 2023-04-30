@@ -24,6 +24,15 @@ public class Reporter {
         }
     }
 
+    static void debug(String log) {
+        if (System.getenv().get("DEBUG") != null) {
+            final StackTraceElement st = Thread.currentThread().getStackTrace()[2];
+            final String callerClass = st.getClassName();
+            final long callerLine = st.getLineNumber();
+            System.out.println("[DEBUG " + callerClass + ":" + callerLine + "]: " + log);
+        }
+    }
+
     public static void runtimeError(Interpreter.RuntimeError error) {
         System.err.println(error.getMessage() + "\n[line " + error.getToken().getLine() + "]");
         hadRuntimeError = true;

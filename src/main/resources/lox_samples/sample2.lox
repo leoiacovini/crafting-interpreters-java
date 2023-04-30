@@ -8,5 +8,7 @@ var a = "global";
 
   showA();
   var a = "block";
+  var b = 2 + 2;
   showA();
+  print b;
 }
