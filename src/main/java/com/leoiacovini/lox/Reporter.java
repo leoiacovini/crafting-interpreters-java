@@ -22,6 +22,7 @@ public class Reporter {
         } else {
             report(token.getLine(), " at '" + token.getLexeme() + "'", message);
         }
+        hadError = true;
     }
 
     static void debug(String log) {

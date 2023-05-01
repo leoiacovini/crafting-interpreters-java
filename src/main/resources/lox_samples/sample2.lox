@@ -1,8 +1,13 @@
 // Another Tests
 
 class TestClass {
+
+//    setName(name) {
+//        this.name = name
+//    }
+
     callMe() {
-        print "calling me " + this.name;
+        print "calling me '" + this.name + "'";
     }
 }
 
@@ -10,14 +15,18 @@ print TestClass;
 var instance = TestClass();
 print instance;
 
+// return "from outside";
+
+print this;
+
 fun notMethod(argument) {
-  print "called function with " + argument;
+  print "called function with argument: '" + argument + "'";
 }
 
 instance.myMethod = notMethod;
-
-instance.name = "Leo";
 instance.myMethod("Argument");
+
+instance.name = "Leonardo";
 
 print instance.name;
 

@@ -16,6 +16,8 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     private final Interpreter interpreter;
     private final Stack<Map<String, TokenBindingStatus>> scopes = new Stack<>();
+    private FunctionType currentFunctionType = FunctionType.NONE;
+    private ClassType currentClassType = ClassType.NONE;
 
     public Stack<Map<String, TokenBindingStatus>> getScopes() {
         return scopes;
@@ -124,6 +126,9 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitThisExpr(Expr.This expr) {
+        if (currentClassType == ClassType.NONE) {
+            Reporter.error(expr.keyword, "Can't call `this` outside of a Class scope.");
+        }
         resolveLocal(expr, expr.keyword);
         return null;
     }
@@ -162,10 +167,17 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         METHOD,
     }
 
+    enum ClassType {
+        NONE,
+        CLASS,
+    }
+
     @Override
     public Void visitClassStmt(Stmt.Class stmt) {
         declare(stmt.name);
         define(stmt.name);
+        ClassType enclosingClassType = this.currentClassType;
+        currentClassType = ClassType.CLASS;
         beginScope();
         scopes.peek().put("this", TokenBindingStatus.DEFINED);
         for (Stmt.Function method : stmt.methods) {
@@ -173,6 +185,7 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
             resolveFunction(method, declaration);
         }
         endScope();
+        currentClassType = enclosingClassType;
         return null;
     }
 
@@ -191,6 +204,8 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
 
     private void resolveFunction(Stmt.Function function, FunctionType functionType) {
+        FunctionType enclosingFunction = currentFunctionType;
+        currentFunctionType = functionType;
         beginScope();
         for (final var param : function.params) {
             declare(param);
@@ -198,6 +213,7 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         }
         resolve(function.body);
         endScope();
+        currentFunctionType = enclosingFunction;
     }
 
     @Override
@@ -223,6 +239,9 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitReturnStmt(Stmt.Return stmt) {
+        if (currentFunctionType == FunctionType.NONE) {
+            Reporter.error(stmt.keyword, "Can't return '" + stmt.value + "' from top-level code.");
+        }
         if (stmt.value != null) resolve(stmt.value);
         return null;
     }

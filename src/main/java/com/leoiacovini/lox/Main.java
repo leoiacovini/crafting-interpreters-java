@@ -21,6 +21,8 @@ public class Main {
 
         resolver.resolve(statements);
 
+        if (Reporter.hadError) return;
+
         interpreter.interpret(statements);
     }
 
