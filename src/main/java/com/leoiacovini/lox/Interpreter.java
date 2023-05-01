@@ -112,7 +112,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitFunctionStmt(Stmt.Function stmt) {
-        final var loxFunction = new LoxFunction(stmt, environment);
+        final var loxFunction = new LoxFunction(stmt, environment, false);
         environment.define(stmt.name.getLexeme(), loxFunction);
         return null;
     }
@@ -120,7 +120,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Void visitClassStmt(Stmt.Class stmt) {
         environment.define(stmt.name.getLexeme(), null);
-        final List<LoxFunction> fns = stmt.methods.stream().map(m -> new LoxFunction(m, environment)).toList();
+        final List<LoxFunction> fns = stmt.methods.stream()
+                .map(m -> new LoxFunction(m, environment, m.name.getLexeme().equals("init")))
+                .toList();
         LoxClass klass = new LoxClass(stmt.name.getLexeme(), fns);
         environment.assign(stmt.name, klass);
         return null;

@@ -165,6 +165,7 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         NONE,
         FUNCTION,
         METHOD,
+        INITIALIZER,
     }
 
     enum ClassType {
@@ -181,8 +182,11 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         beginScope();
         scopes.peek().put("this", TokenBindingStatus.DEFINED);
         for (Stmt.Function method : stmt.methods) {
-            final FunctionType declaration = FunctionType.METHOD;
-            resolveFunction(method, declaration);
+            if (method.name.getLexeme().equals("init")) {
+                resolveFunction(method, FunctionType.INITIALIZER);
+            } else {
+                resolveFunction(method, FunctionType.METHOD);
+            }
         }
         endScope();
         currentClassType = enclosingClassType;
@@ -242,7 +246,12 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         if (currentFunctionType == FunctionType.NONE) {
             Reporter.error(stmt.keyword, "Can't return '" + stmt.value + "' from top-level code.");
         }
-        if (stmt.value != null) resolve(stmt.value);
+        if (stmt.value != null) {
+            if (currentFunctionType == FunctionType.INITIALIZER) {
+                Reporter.error(stmt.keyword, "Can't return values from class initializer.");
+            }
+            resolve(stmt.value);
+        }
         return null;
     }
 

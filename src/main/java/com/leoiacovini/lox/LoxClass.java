@@ -9,6 +9,14 @@ public class LoxClass implements LoxCallable {
     final String name;
     final private Map<String, LoxFunction> methods;
 
+    public LoxFunction getMethod(String methodName) {
+        return methods.get(methodName);
+    }
+
+    private LoxFunction getInit() {
+        return getMethod("init");
+    }
+
     LoxClass(String name, List<LoxFunction> methods) {
         this.name = name;
         final HashMap<String, LoxFunction> indexedMethods = new HashMap<>();
@@ -16,10 +24,6 @@ public class LoxClass implements LoxCallable {
             indexedMethods.put(m.name(), m);
         });
         this.methods = indexedMethods;
-    }
-
-    public LoxFunction getMethod(String methodName) {
-        return this.methods.get(methodName);
     }
 
     @Override
@@ -30,11 +34,17 @@ public class LoxClass implements LoxCallable {
     @Override
     public Object call(List<Object> args, Interpreter interpreter) {
         final LoxInstance instance = new LoxInstance(this);
+        final LoxFunction init = getInit();
+        if (init != null) {
+            init.bind(instance).call(args, interpreter);
+        }
         return instance;
     }
 
     @Override
     public int arity() {
+        LoxFunction init = getInit();
+        if (init != null) return init.arity();
         return 0;
     }
 
