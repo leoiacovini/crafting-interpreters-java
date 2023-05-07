@@ -135,6 +135,9 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitSuperExpr(Expr.Super expr) {
+        if (currentClassType == ClassType.NONE) {
+            Reporter.error(expr.keyword, "Can't call `super` outside of a Subclass scope.");
+        }
         resolveLocal(expr, expr.keyword);
 //        resolveLocal(expr, expr.method);
         return null;
@@ -177,6 +180,7 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     enum ClassType {
         NONE,
+        SUB_CLASS,
         CLASS,
     }
 
@@ -195,6 +199,7 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
         if (stmt.superClass != null) {
             beginScope();
+            currentClassType = ClassType.SUB_CLASS;
             scopes.peek().put("super", TokenBindingStatus.DEFINED);
         }
 
