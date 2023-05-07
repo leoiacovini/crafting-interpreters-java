@@ -119,11 +119,30 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitClassStmt(Stmt.Class stmt) {
+        Object superClass = null;
+        if (stmt.superClass != null) {
+            superClass = evaluateExpr(stmt.superClass);
+            if (!(superClass instanceof LoxClass)) {
+                throw new RuntimeError(stmt.superClass.name, "Superclass must be a class.");
+            }
+        }
         environment.define(stmt.name.getLexeme(), null);
+
+        // Define Class Env
+        Environment classEnv;
+        if (stmt.superClass != null) {
+            classEnv = environment.newChild();
+            classEnv.define("super", superClass);
+        } else {
+            classEnv = environment;
+        }
+        // END
+
         final List<LoxFunction> fns = stmt.methods.stream()
-                .map(m -> new LoxFunction(m, environment, m.name.getLexeme().equals("init")))
+                .map(m -> new LoxFunction(m, classEnv, m.name.getLexeme().equals("init")))
                 .toList();
-        LoxClass klass = new LoxClass(stmt.name.getLexeme(), fns);
+        LoxClass klass = new LoxClass(stmt.name.getLexeme(), (LoxClass) superClass, fns);
+
         environment.assign(stmt.name, klass);
         return null;
     }
@@ -283,6 +302,18 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Object visitThisExpr(Expr.This expr) {
         return lookupVariable(expr.keyword, expr);
+    }
+
+    @Override
+    public Object visitSuperExpr(Expr.Super expr) {
+        final int distance = locals.get(expr);
+        final LoxClass superClass = (LoxClass) environment.getAt(distance, "super");
+        final LoxInstance instance = (LoxInstance) environment.getAt(distance - 1, "this");
+        LoxFunction method = superClass.getMethod(expr.method.getLexeme());
+        if (method == null) {
+            throw new RuntimeError(expr.method, "Method `" + expr.method.getLexeme() + "` not found.");
+        }
+        return method.bind(instance);
     }
 
     @Override

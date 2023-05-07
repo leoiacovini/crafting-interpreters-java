@@ -179,6 +179,11 @@ public class Parser {
 
     private Stmt.Class classDeclaration() {
         final Token className = consume(TokenType.IDENTIFIER, "Expected class name after 'class' keyword.");
+        Expr.Variable superClass = null;
+        if (match(TokenType.LESS)) {
+            consume(TokenType.IDENTIFIER, "Expected Super Class name after < symbol.");
+            superClass = new Expr.Variable(previous());
+        }
         consume(TokenType.LEFT_BRACE, "Expected '{' after class name.");
         List<Stmt.Function> methods = new ArrayList<>();
         while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
@@ -186,7 +191,7 @@ public class Parser {
             methods.add(method);
         }
         consume(TokenType.RIGHT_BRACE, "Expectect '}' after class body.");
-        return new Stmt.Class(className, methods);
+        return new Stmt.Class(className, superClass, methods);
     }
 
     private Stmt declaration() {
@@ -389,6 +394,13 @@ public class Parser {
         return expr;
     }
 
+    private Expr.Super matchSuper() {
+        final Token superToken = previous();
+        consume(TokenType.DOT, "Expected `.` after `super` call");
+        final Token methodToken = consume(TokenType.IDENTIFIER, "Expected method name after `.`");
+        return new Expr.Super(superToken, methodToken);
+    }
+
     private Expr primary() {
         if (match(TokenType.FALSE)) return new Expr.Literal(false);
         if (match(TokenType.TRUE)) return new Expr.Literal(true);
@@ -396,6 +408,7 @@ public class Parser {
         if (match(TokenType.STRING, TokenType.NUMBER)) return new Expr.Literal(previous().getLiteral());
         if (match(TokenType.IDENTIFIER)) return new Expr.Variable(previous());
         if (match(TokenType.THIS)) return new Expr.This(previous());
+        if (match(TokenType.SUPER)) return matchSuper();
         if (match(TokenType.LEFT_PARENS)) {
             final var expr = expression();
             consume(TokenType.RIGHT_PARENS, "Expect ')' after expression.");

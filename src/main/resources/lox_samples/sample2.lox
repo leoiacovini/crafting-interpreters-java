@@ -1,12 +1,26 @@
 // Another Tests
 
-class TestClass {
+class BaseClass {
+
+    parentCall() {
+        print "Calling the parent one";
+    }
+
+}
+
+class TestClass < BaseClass {
 
     init() {
      return;
     }
 
+    parentCall() {
+        super.parentCall();
+        print "Calling Child Impl";
+    }
+
     callMe() {
+        this.parentCall();
         print "calling me '" + this.name + "'";
     }
 }

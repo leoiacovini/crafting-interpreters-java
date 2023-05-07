@@ -134,6 +134,13 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visitSuperExpr(Expr.Super expr) {
+        resolveLocal(expr, expr.keyword);
+//        resolveLocal(expr, expr.method);
+        return null;
+    }
+
+    @Override
     public Void visitLogicalExpr(Expr.Logical expr) {
         resolve(expr.left);
         resolve(expr.right);
@@ -177,8 +184,20 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     public Void visitClassStmt(Stmt.Class stmt) {
         declare(stmt.name);
         define(stmt.name);
+        if (stmt.superClass != null) {
+            if (stmt.superClass.name.getLexeme().equals(stmt.name.getLexeme())) {
+                Reporter.error(stmt.superClass.name, "A class cannot inherit from itself.");
+            }
+            resolve(stmt.superClass);
+        }
         ClassType enclosingClassType = this.currentClassType;
         currentClassType = ClassType.CLASS;
+
+        if (stmt.superClass != null) {
+            beginScope();
+            scopes.peek().put("super", TokenBindingStatus.DEFINED);
+        }
+
         beginScope();
         scopes.peek().put("this", TokenBindingStatus.DEFINED);
         for (Stmt.Function method : stmt.methods) {
@@ -189,6 +208,11 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
             }
         }
         endScope();
+
+        if (stmt.superClass != null) {
+            endScope();
+        }
+
         currentClassType = enclosingClassType;
         return null;
     }

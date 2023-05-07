@@ -8,22 +8,28 @@ public class LoxClass implements LoxCallable {
 
     final String name;
     final private Map<String, LoxFunction> methods;
+    final private LoxClass superClass;
+
+    LoxClass(String name, LoxClass superClass, List<LoxFunction> methods) {
+        this.name = name;
+        this.superClass = superClass;
+        final HashMap<String, LoxFunction> indexedMethods = new HashMap<>();
+        methods.forEach(m -> {
+//            final LoxFunction boundMethod = m.bindSuper(superClass);
+            indexedMethods.put(m.name(), m);
+        });
+        this.methods = indexedMethods;
+    }
 
     public LoxFunction getMethod(String methodName) {
-        return methods.get(methodName);
+        final LoxFunction localMethod = methods.get(methodName);
+        if (localMethod != null) return localMethod;
+        if (superClass != null) return superClass.getMethod(methodName);
+        return null;
     }
 
     private LoxFunction getInit() {
         return getMethod("init");
-    }
-
-    LoxClass(String name, List<LoxFunction> methods) {
-        this.name = name;
-        final HashMap<String, LoxFunction> indexedMethods = new HashMap<>();
-        methods.forEach(m -> {
-            indexedMethods.put(m.name(), m);
-        });
-        this.methods = indexedMethods;
     }
 
     @Override
